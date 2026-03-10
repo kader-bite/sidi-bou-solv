@@ -1,0 +1,64 @@
+.genre-section {
+  margin-left: 21%;
+  width: 79%;
+  min-height: 100vh;
+  background-color: #e8edf2;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.genre-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #195383;
+  margin-bottom: 6px;
+}
+
+.genre-header p {
+  font-size: 15px;
+  color: #888;
+}
+
+.genre-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.genre-card {
+  background: white;
+  border-radius: 16px;
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.genre-card:hover {
+  border-color: #195383;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(25, 83, 131, 0.15);
+}
+
+.genre-icon {
+  font-size: 40px;
+}
+
+.genre-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #195383;
+}
+
+.genre-desc {
+  font-size: 13px;
+  color: #999;
+}

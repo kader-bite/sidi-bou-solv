@@ -1,0 +1,16 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #e8edf2;
+}
+
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+}
