@@ -1,27 +1,54 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../SideBar/SideBar";
-// change this line at the top of Quiz.jsx
-import { questions as allQuestions } from "../../assets/data/questions";
 import "./Quiz.css";
 
 const Quiz = ({ genre, onFinish }) => {
-  const questions = allQuestions[genre] || [];
-
-  const [quizStarted, setQuizStarted] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [countdown, setCountdown] = useState(5);
+  const [quizReady, setQuizReady] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [quizFinished, setQuizFinished] = useState(false);
   const [score, setScore] = useState(0);
 
+  // Fetch questions from API
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const encodedGenre = encodeURIComponent(genre);
+        const res = await fetch(`http://localhost:5000/api/questions/${encodedGenre}`);
+        if (!res.ok) throw new Error("Failed to fetch questions");
+        const data = await res.json();
+        setQuestions(data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+    fetchQuestions();
+  }, [genre]);
+
   const current = questions[currentIndex];
 
+  // Countdown starts after loading is done
   useEffect(() => {
-    if (!quizStarted || quizFinished) return;
+    if (loading || quizReady) return;
+    if (countdown === 0) { setQuizReady(true); return; }
+    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, quizReady, loading]);
+
+  // 60s quiz timer
+  useEffect(() => {
+    if (!quizReady || quizFinished) return;
     if (timeLeft === 0) { setQuizFinished(true); return; }
     const timer = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearTimeout(timer);
-  }, [quizStarted, timeLeft, quizFinished]);
+  }, [quizReady, timeLeft, quizFinished]);
 
   const handleAnswer = (index) => {
     if (selectedAnswer !== null) return;
@@ -42,29 +69,65 @@ const Quiz = ({ genre, onFinish }) => {
     return "answer-btn disabled";
   };
 
+  if (error) return (
+    <div className="container">
+      <Sidebar />
+      <div className="questions-section">
+        <div className="quiz-card">
+          <div className="question-box">
+            <h2 className="question-title">⚠️ Error</h2>
+            <p className="question-text">{error} — make sure the API is running on port 5000</p>
+          </div>
+          <button className="btn-next" onClick={onFinish}>← Back</button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="container">
       <Sidebar />
       <div className="questions-section">
+
+        {/* Loading or countdown overlay */}
+        {(loading || !quizReady) && (
+          <div className="countdown-overlay">
+            <div className="countdown-box">
+              {loading ? (
+                <>
+                  <p className="countdown-label">Loading questions...</p>
+                  <span className="countdown-spinner" />
+                </>
+              ) : (
+                <>
+                  <p className="countdown-label">Quiz starts in</p>
+                  <span className="countdown-number" key={countdown}>{countdown}</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="nav-btn">
           <p className="slogan">{genre}</p>
           <div className="start-btn">
             <button className="btn-outline" onClick={onFinish}>← Back</button>
-            <button className="btn-solid" onClick={() => setQuizStarted(true)} disabled={quizStarted}>
-              {quizStarted ? "Quiz Started" : "Start Quiz"}
-            </button>
           </div>
         </div>
 
         {quizFinished ? (
           <div className="quiz-card">
             <div className="question-box">
-              <h2 className="question-title">{timeLeft === 0 ? "⏰ Time's Up!" : "Quiz Complete! 🎉"}</h2>
-              <p className="question-text">You scored <strong>{score}</strong> out of <strong>{questions.length}</strong></p>
+              <h2 className="question-title">
+                {timeLeft === 0 ? "⏰ Time's Up!" : "Quiz Complete! 🎉"}
+              </h2>
+              <p className="question-text">
+                You scored <strong>{score}</strong> out of <strong>{questions.length}</strong>
+              </p>
             </div>
             <button className="btn-next" onClick={onFinish}>Back to Quizzes</button>
           </div>
-        ) : (
+        ) : current ? (
           <div className="quiz-card">
             <div className="question-box">
               <h2 className="question-title">Question {currentIndex + 1}</h2>
@@ -76,7 +139,7 @@ const Quiz = ({ genre, onFinish }) => {
                   key={index}
                   className={getAnswerClass(index)}
                   onClick={() => handleAnswer(index)}
-                  disabled={!quizStarted || (selectedAnswer !== null && index !== current.correct && index !== selectedAnswer)}
+                  disabled={!quizReady || (selectedAnswer !== null && index !== current.correct && index !== selectedAnswer)}
                 >
                   {answer}
                 </button>
@@ -90,12 +153,16 @@ const Quiz = ({ genre, onFinish }) => {
                 </svg>
                 {timeLeft}
               </span>
-              <button className="btn-next" onClick={handleNext} disabled={selectedAnswer === null || !quizStarted}>
+              <button
+                className="btn-next"
+                onClick={handleNext}
+                disabled={selectedAnswer === null}
+              >
                 Next ▶
               </button>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
